@@ -23,35 +23,6 @@ CREATE TABLE Usuarios (
     FOREIGN KEY (rol_id) REFERENCES Roles(id) ON DELETE RESTRICT
 ) ENGINE = InnoDB;
 
--- Tabla de Perfiles de Usuario  (índice UNIQUE sobre usuario_id)
-CREATE TABLE PerfilUsuario (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    direccion TEXT,
-    telefono VARCHAR(20),
-    fecha_nacimiento DATE,
-    genero ENUM('Masculino','Femenino','Otro'),
-    foto_perfil VARCHAR(255),
-    anio_académico VARCHAR(4),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
-    UNIQUE KEY uq_perfil_usuario (usuario_id),
-    FOREIGN KEY (usuario_id) REFERENCES Usuarios(id) ON DELETE CASCADE
-) ENGINE = InnoDB;
-
--- Tabla de Contactos de Emergencia 
-CREATE TABLE ContactoEmergencia(
-	id INT AUTO_INCREMENT PRIMARY KEY, 
-    nombres VARCHAR(200),
-    apellidos VARCHAR(200),
-    telefono VARCHAR(14),
-    direccion TEXT,
-    id_perfil_usuario INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_perfil_usuario) REFERENCES PerfilUsuario(id) ON DELETE CASCADE
-);
-
 -- Tabla de Escuelas Academicas
 CREATE TABLE Escuelas (
 	id INT AUTO_INCREMENT PRIMARY KEY, 
@@ -83,6 +54,48 @@ CREATE TABLE CoordinadoresCarrera(
     FOREIGN KEY (id_carrera) REFERENCES Carreras(id) ON DELETE CASCADE
 );
 
+-- Tabla de Perfiles de Usuario  (índice UNIQUE sobre usuario_id)
+CREATE TABLE PerfilUsuario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    direccion TEXT,
+    telefono VARCHAR(20),
+    fecha_nacimiento DATE,
+    genero ENUM('Masculino','Femenino','Otro'),
+    foto_perfil VARCHAR(255),
+    anio_académico VARCHAR(10),
+    id_carrera INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
+    UNIQUE KEY uq_perfil_usuario (usuario_id),
+    FOREIGN KEY (usuario_id) REFERENCES Usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_carrera) REFERENCES Carreras(id) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
+-- Tabla de Contactos de Emergencia 
+CREATE TABLE ContactoEmergencia(
+	id INT AUTO_INCREMENT PRIMARY KEY, 
+    nombres VARCHAR(200),
+    apellidos VARCHAR(200),
+    telefono VARCHAR(14),
+    direccion TEXT,
+    id_perfil_usuario INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_perfil_usuario) REFERENCES PerfilUsuario(id) ON DELETE CASCADE
+);
+
+-- Tabla de Representantes por Institución
+CREATE TABLE EncargadoInstitucion(
+    id INT AUTO_INCREMENT PRIMARY KEY, 
+    nombres VARCHAR(100),
+    apellidos VARCHAR(100),
+    correo VARCHAR(100),
+    telefono VARCHAR(15),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Tabla de Instituciones
 CREATE TABLE Instituciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -93,8 +106,10 @@ CREATE TABLE Instituciones (
     fecha_fundacion DATE,
     nit VARCHAR(25),
     estado ENUM('Pendiente','Aprobado','Rechazado') DEFAULT 'Pendiente',
+    id_encargado INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_encargado) REFERENCES EncargadoInstitucion(id) ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
 -- Tabla de Proyectos de Institución
@@ -103,16 +118,72 @@ CREATE TABLE ProyectosInstitucion (
     institucion_id INT NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     descripcion TEXT NOT NULL,
+    sitio_web VARCHAR(100),
     fecha_inicio DATE,
     fecha_fin DATE,
     modalidad VARCHAR(25),
     direccion TEXT,
+    actividad_principal TEXT,
+    horario_requerido VARCHAR(100),
     disponibilidad BOOLEAN DEFAULT 1,
     estado ENUM('Pendiente','Aprobado','Rechazado') DEFAULT 'Pendiente',
+    id_encargado INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
-    FOREIGN KEY (institucion_id) REFERENCES Instituciones(id) ON DELETE CASCADE
+    FOREIGN KEY (institucion_id) REFERENCES Instituciones(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_encargado) REFERENCES EncargadoInstitucion(id) ON DELETE CASCADE
 ) ENGINE = InnoDB;
+
+CREATE TABLE ActividadesProyecto(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    actividad_a_realizar TEXT,
+    objetivo VARCHAR(100),
+    meta VARCHAR(100),
+    duracion VARCHAR(50),
+    id_proyecto INT,
+    FOREIGN KEY (id_proyecto) REFERENCES ProyectosInstitucion(id) ON DELETE CASCADE
+);
+
+CREATE TABLE BitacoraProyecto(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    estado ENUM('En Proceso','Aprobado','Rechazado') DEFAULT 'En Proceso',
+    observaciones TEXT, 
+    id_proyecto INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_proyecto) REFERENCES ProyectosInstitucion(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE DetalleBitacoraPerfilUsuario(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_bitacora INT,
+    id_perfil_usuario INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_bitacora) REFERENCES BitacoraProyecto(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_perfil_usuario) REFERENCES PerfilUsuario(id) ON DELETE CASCADE
+);
+
+CREATE TABLE BitacoraItems(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    detalle_actividades TEXT,
+    total_horas INT,
+    punch_in TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    punch_out TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ;
+
+CREATE TABLE DetalleBitacoraProyectoBitacoraItems(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_bitacora INT,
+    id_bitacora_item INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_bitacora) REFERENCES BitacoraProyecto(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_bitacora_item) REFERENCES BitacoraItems(id) ON DELETE CASCADE
+);
 
 -- Tabla de Aplicaciones de Estudiantes (índice UNIQUE estudiante-proyecto)
 CREATE TABLE AplicacionesEstudiantes (
