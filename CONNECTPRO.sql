@@ -165,7 +165,7 @@ CREATE TABLE
         genero ENUM ('Masculino', 'Femenino', 'Otro'),
         foto_perfil VARCHAR(255),
         carnet VARCHAR(7) NOT NULL,
-        anio_academico VARCHAR(10),
+        anio_academico VARCHAR(25),
         id_carrera INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
